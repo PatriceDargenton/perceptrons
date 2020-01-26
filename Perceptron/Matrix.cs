@@ -222,6 +222,27 @@ namespace Perceptron {
         }
 
         /// <summary>
+        /// Compute average value of the matrix
+        /// </summary>
+        /// <returns></returns>
+        public float Average()
+        {
+            int nbElements = this.rows * this.cols;
+            float sum = 0;
+            for (int i = 0; i <= this.rows - 1; i++)
+                for (int j = 0; j <= this.cols - 1; j++)
+                    sum += this.data[i, j];
+
+            float average = 0;
+            if (nbElements <= 1)
+                average = sum;
+            else
+                average = sum / nbElements;
+
+            return average;
+        }
+
+        /// <summary>
         /// Transpose a Matrix.
         /// </summary>
         /// <param name="m">Matrix object</param>

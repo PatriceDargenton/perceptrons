@@ -8,16 +8,35 @@ namespace Perceptron {
 		public Matrix weights_ho;
 		public Matrix bias_h;
 		public Matrix bias_o;
-		private float learningRate;
+        private float learningRate;
 
+        /// <summary>
+        /// Average error of the output matrix
+        /// </summary>
+        public float averageError;
 
-		/// <summary>
-		/// 
-		/// </summary>
-		/// <param name="inputNodes"></param>
-		/// <param name="hiddenNodes"></param>
-		/// <param name="outputNodes"></param>
-		public MultiLayerPerceptron(int inputNodes, int hiddenNodes, int outputNodes, float learningRate) {
+        /// <summary>
+        /// Activate function of each neuron of the MLP
+        /// </summary>
+        private ActivationFunctionForMatrix.IActivationFunctionForMatrix activFct;
+
+        /// <summary>
+        /// Lambda function for the activation function
+        /// </summary>
+        private Func<float, float> lambdaFct;
+
+        /// <summary>
+        /// Lambda function for the derivative of the activation function
+        /// </summary>
+        private Func<float, float> lambdaFctD;
+                
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="inputNodes"></param>
+        /// <param name="hiddenNodes"></param>
+        /// <param name="outputNodes"></param>
+        public MultiLayerPerceptron(int inputNodes, int hiddenNodes, int outputNodes, float learningRate) {
 			this.weights_ih = new Matrix(hiddenNodes, inputNodes);
 			this.weights_ho = new Matrix(outputNodes, hiddenNodes);
 			this.bias_h = new Matrix(hiddenNodes, 1);
@@ -27,56 +46,97 @@ namespace Perceptron {
 			this.bias_h.Randomize();
 			this.bias_o.Randomize();
 			this.learningRate = learningRate;
-		}
 
-		/// <summary>
-		/// Sigmoid activation function.
-		/// </summary>
-		/// <param name="x"></param>
-		/// <returns></returns>
-		private float sigmoid(float x) {
-			return (float)(1 / (1 + Math.Exp(-x)));
-		}
+            Func<float, float> lambdaFct = (x) => activFct.Activation(x, gain: 1, center: 0);
+            Func<float, float> lambdaFctD = (x) => activFct.Derivative(x, gain: 1);
+            SetLambdaActivationFunction(lambdaFct, lambdaFctD);
+        }
 
-		/// <summary>
-		/// The derivative of sigmoid.
-		/// </summary>
-		/// <param name="y"></param>
-		/// <returns></returns>
-		private float dsigmoid(float y) {
-			return y * (1 - y);
-		}
+        /// <summary>
+        /// Set specific activation function
+        /// </summary>
+        public void SetLambdaActivationFunction(
+            Func<float, float> lambdaFct, Func<float, float> lambdaFctD)
+        {
+            this.lambdaFct = lambdaFct;
+            this.lambdaFctD = lambdaFctD;
+        }
 
-		public float[] FeedForward(float[] inputs_array) {
+        /// <summary>
+        /// Set registered activation function
+        /// </summary>
+        public void SetActivationFunction(
+            ActivationFunctionForMatrix.TActivationFunction fctAct)
+        {
+            switch (fctAct)
+            {
+                case ActivationFunctionForMatrix.TActivationFunction.Sigmoid:
+                    this.activFct = new ActivationFunctionForMatrix.SigmoidFunction();
+                    break;
+                case ActivationFunctionForMatrix.TActivationFunction.HyperbolicTangent:
+                    this.activFct = new ActivationFunctionForMatrix.HyperbolicTangentFunction();
+                    break;
+                case ActivationFunctionForMatrix.TActivationFunction.ELU:
+                    this.activFct = new ActivationFunctionForMatrix.ELUFunction();
+                    break;
+                case ActivationFunctionForMatrix.TActivationFunction.ReLU:
+                    this.activFct = new ActivationFunctionForMatrix.ReluFunction();
+                    break;
+                default:
+                    this.activFct = null;
+                    break;
+            }
+        }
+
+        /// <summary>
+        /// Sigmoid activation function.
+        /// </summary>
+        /// <param name="x"></param>
+        /// <returns></returns>
+        // private float sigmoid(float x) {
+        //	return (float)(1 / (1 + Math.Exp(-x)));
+        //}
+
+        /// <summary>
+        /// The derivative of sigmoid.
+        /// </summary>
+        /// <param name="y"></param>
+        /// <returns></returns>
+        // private float dsigmoid(float y) {
+        //	return y * (1 - y);
+        //}
+
+        public float[] FeedForward(float[] inputs_array) {
+
 			// Generating the Hidden Outputs
 			Matrix inputs = Matrix.FromArray(inputs_array);
 			Matrix hidden = Matrix.Multiply(this.weights_ih, inputs);
 			hidden.Add(this.bias_h);
 
 			// activation function!
-			hidden.Map(sigmoid);
+			hidden.Map(this.lambdaFct);
 
 			// Generating the output's output!
 			Matrix output = Matrix.Multiply(this.weights_ho, hidden);
 			output.Add(this.bias_o);
-			output.Map(sigmoid);
+			output.Map(this.lambdaFct);
 
 			return output.ToArray();
 		}
 
-		public void Train(float[] inputs_array, float[] targets_array) {
+        public void Train(float[] inputs_array, float[] targets_array) {
 			// Generating the Hidden Outputs
 			Matrix inputs = Matrix.FromArray(inputs_array);
 			Matrix hidden = Matrix.Multiply(this.weights_ih, inputs);
 			hidden.Add(this.bias_h);
 
 			// activation function!
-			hidden.Map(sigmoid);
+			hidden.Map(this.lambdaFct);
 
     		// Generating the output's output!
 			Matrix outputs = Matrix.Multiply(this.weights_ho, hidden);
 			outputs.Add(this.bias_o);
-			outputs.Map(sigmoid);
+			outputs.Map(this.lambdaFct);
 
     		// Convert array to matrix object
 			Matrix targets = Matrix.FromArray(targets_array);
@@ -84,10 +144,11 @@ namespace Perceptron {
 			// Calculate the error
 			// ERROR = TARGETS - OUTPUTS
 			Matrix output_errors = Matrix.Subtract(targets, outputs);
+            this.averageError = Math.Abs(output_errors.Average());
 
-    		// let gradient = outputs * (1 - outputs);
-			// Calculate gradient
-			Matrix gradients = Matrix.Map(outputs, dsigmoid);
+            // let gradient = outputs * (1 - outputs);
+            // Calculate gradient
+            Matrix gradients = Matrix.Map(outputs, this.lambdaFctD);
 			gradients.Multiply(output_errors);
 			gradients.Multiply(this.learningRate);
 
@@ -105,7 +166,7 @@ namespace Perceptron {
 			Matrix hidden_errors = Matrix.Multiply(weights_ho_t, output_errors);
 
 			// Calculate hidden gradient
-			Matrix hidden_gradient = Matrix.Map(hidden, dsigmoid);
+			Matrix hidden_gradient = Matrix.Map(hidden, this.lambdaFctD);
 			hidden_gradient.Multiply(hidden_errors);
 			hidden_gradient.Multiply(this.learningRate);
 
@@ -118,11 +179,11 @@ namespace Perceptron {
 			this.bias_h.Add(hidden_gradient);
 		}
 
-		/// <summary>
-		/// This is our test function.
-		/// </summary>
-		/// <returns>The number of correct answers.</returns>
-		public float[] Test(float[] inputs) {
+        /// <summary>
+        /// This is our test function.
+        /// </summary>
+        /// <returns>The number of correct answers.</returns>
+        public float[] Test(float[] inputs) {
 			return this.FeedForward(inputs);
 		}
 	}

@@ -1,3 +1,7 @@
 /Perceptron/bin
 /Perceptron/obj
 .vs
+*.suo
+
+# Ignore Archive subdirectory
+Archive/

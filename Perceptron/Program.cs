@@ -1,31 +1,64 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics; // Debug.WriteLine
 using System.Linq;
 
 namespace Perceptron {
 	internal class Program {
-		/// <summary>
-		/// Entry point of the application.
-		/// </summary>
-		/// <param name="args"></param>
-		// public static void Main(string[] args) {
-		// 	MultiLayerPerceptron p = new MultiLayerPerceptron(2,2,1,0.1F);
-		// 	ML_TrainingData training = new ML_TrainingData(2,1);
-		// 	training.Create();
-		// 	float[,] inputs = training.GetInputs();
-		// 	float[,] outputs = training.GetOutputs();
-		// 	for (int i = 0; i < 1000000; i++) {
-		// 		int r = MultiLayerPerceptron.rng.Next(4);
-		// 		float[] inp = new float[] { inputs[r,0], inputs[r,1] };
-		// 		float[] outp = new float[] { outputs[r,0] };
-		// 		p.Train(inp, outp);
-		// 	}
-		// 	for (int i = 0,length = training.data.GetLength(0); i < length; i++) {
-		// 		float[] inp = new float[] { inputs[i,0], inputs[i,1] };
-		// 		Console.WriteLine(p.Test(inp)[0]);
-		// 	}
-        // }
+        /// <summary>
+        /// Entry point of the application.
+        /// </summary>
+        /// <param name="args"></param>
+        public static void Main(string[] args)
+        {
+            MultiLayerPerceptron p = new MultiLayerPerceptron(2, 2, 1, 0.1F);
 
+            // Sometimes works
+            p.SetActivationFunction(ActivationFunctionForMatrix.TActivationFunction.Sigmoid);
+
+            // Sometimes works
+            //p.SetActivationFunction(ActivationFunctionForMatrix.TActivationFunction.HyperbolicTangent);
+
+            // Works fine
+            //p.SetActivationFunction(ActivationFunctionForMatrix.TActivationFunction.ELU);
+
+            // Doesn't work
+            //p.SetActivationFunction(ActivationFunctionForMatrix.TActivationFunction.ReLU);
+
+            ML_TrainingData training = new ML_TrainingData(2, 1);
+            training.Create();
+            float[,] inputs = training.GetInputs();
+            float[,] outputs = training.GetOutputs();
+            const int nbIterations = 1000000;
+            for (int i = 0; i < nbIterations; i++)
+            {
+                int r = MultiLayerPerceptron.rng.Next(4);
+                float[] inp = new float[] { inputs[r, 0], inputs[r, 1] };
+                float[] outp = new float[] { outputs[r, 0] };
+                p.Train(inp, outp);
+
+                if ((i < 10) || 
+                    (((i + 1) % 10000) == 0) ||
+                    ((((i + 1) % 1000) == 0) && i < 10000))
+                {
+                    string msg = "Iteration n°" + (i + 1) + "/" + nbIterations + 
+                        " : average error = " + p.averageError.ToString("0.00");
+                    Console.WriteLine(msg);
+                    Debug.WriteLine(msg);
+                }
+
+            }
+            for (int i = 0, length = training.data.GetLength(0); i < length; i++)
+            {
+                float[] inp = new float[] { inputs[i, 0], inputs[i, 1] };
+                Console.WriteLine(p.Test(inp)[0]);
+            }
+
+            Console.WriteLine("Press a key to quit.");
+            Console.ReadKey();
+        }
+
+        /*
 		public static void Main(string[] args) {
 			Matrix a = new Matrix(2,3);
 			Matrix b = new Matrix(3,1);
@@ -35,22 +68,23 @@ namespace Perceptron {
 			Console.WriteLine(b);
 			Console.WriteLine(Matrix.Multiply(a,b));
         }
+        */
 
-		// public static void Main(string[] args) {
-		// 	SingleLayerPerceptron p = new SingleLayerPerceptron(2, 0.000001F, 0.4F, -1.0F);
-		// 	SL_TrainingData data = new SL_TrainingData(100000);
-		// 	data.Create(p);
-		// 	for (int i = 0; i < data.length; i++) {
-		// 		p.Train(new float[] { data.inputs[i,0], data.inputs[i,1] }, data.targets[i,0]);
-		// 	}
-		// 	int successRate = 0;
-		// 	for (int i = 0; i < data.length; i++) {
-		// 		successRate += p.Test(new float[] { data.inputs[i,0], data.inputs[i,1] });
-		// 	}
-		// 	Console.WriteLine("{0}/{1} of the answers were correct", successRate, data.length);
+        // public static void Main(string[] args) {
+        // 	SingleLayerPerceptron p = new SingleLayerPerceptron(2, 0.000001F, 0.4F, -1.0F);
+        // 	SL_TrainingData data = new SL_TrainingData(100000);
+        // 	data.Create(p);
+        // 	for (int i = 0; i < data.length; i++) {
+        // 		p.Train(new float[] { data.inputs[i,0], data.inputs[i,1] }, data.targets[i,0]);
+        // 	}
+        // 	int successRate = 0;
+        // 	for (int i = 0; i < data.length; i++) {
+        // 		successRate += p.Test(new float[] { data.inputs[i,0], data.inputs[i,1] });
+        // 	}
+        // 	Console.WriteLine("{0}/{1} of the answers were correct", successRate, data.length);
         // }
 
-		private static void Draw(List<Point> dict) {
+        private static void Draw(List<Point> dict) {
 			int consoleWidth = 78;
 			int consoleHeight = 40;
 
