@@ -144,7 +144,9 @@ namespace Perceptron {
 			// Calculate the error
 			// ERROR = TARGETS - OUTPUTS
 			Matrix output_errors = Matrix.Subtract(targets, outputs);
-            this.averageError = Math.Abs(output_errors.Average());
+            //this.averageError = Math.Abs(output_errors.Average());
+            // Compute first abs then average:
+            this.averageError = output_errors.Abs().Average();
 
             // let gradient = outputs * (1 - outputs);
             // Calculate gradient

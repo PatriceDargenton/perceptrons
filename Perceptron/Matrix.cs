@@ -222,6 +222,23 @@ namespace Perceptron {
         }
 
         /// <summary>
+        /// Compute absolute values of a matrix
+        /// </summary>
+        /// <returns>Returns a new Matrix object.</returns>
+        public Matrix Abs()
+        {
+            Matrix c = new Matrix(this.rows, this.cols);
+            for (int i = 0; i < this.rows; i++)
+            {
+                for (int j = 0; j < this.cols; j++)
+                {
+                    c.data[i, j] = Math.Abs(this.data[i, j]);
+                }
+            }
+            return c;
+        }
+
+        /// <summary>
         /// Compute average value of the matrix
         /// </summary>
         /// <returns></returns>
